@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gorengan Pak Andi - Official Business Storefront</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                            950: '#451a03',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fafafa; color: #18181b; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f4f4f5; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="antialiased bg-zinc-50 text-zinc-900 selection:bg-amber-400 selection:text-amber-950"
+      x-data="businessApp()" x-init="initApp()">
+
+    <!-- Toast Notifications -->
+    <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="bg-zinc-900 text-white px-5 py-3.5 rounded-2xl text-xs font-semibold shadow-2xl flex items-center gap-3 border border-zinc-800 pointer-events-auto animate-fade-in">
+                <i data-lucide="info" class="w-4 h-4 text-amber-400"></i>
+                <span x-text="toast.message"></span>
+            </div>
+        </template>
+    </div>
+
+    <!-- Announcement Bar -->
+    <div class="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-zinc-300 py-2.5 px-4 text-center text-xs font-medium tracking-wide flex items-center justify-center gap-2 border-b border-zinc-800">
+        <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
+        <span x-text="storeConfig.announcementText"></span>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-white/90 border-b border-zinc-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo & Store Status -->
+                <div class="flex items-center gap-4">
+                    <a href="#" class="flex items-center gap-3 group">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+                            <i data-lucide="store" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-xl font-extrabold tracking-tight text-zinc-900 block leading-tight" x-text="storeConfig.name"></span>
+                            <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest" x-text="storeConfig.tagline"></span>
+                        </div>
+                    </a>
+
+                    <!-- Live Status Indicator -->
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border"
+                         :class="isOpen ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'">
+                        <span class="w-2 h-2 rounded-full" :class="isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></span>
+                        <span x-text="isOpen ? `BUKA (${storeConfig.hours})` : 'TUTUP WARUNG'"></span>
+                    </div>
+                </div>
+
+                <!-- Nav Links -->
+                <nav class="hidden md:flex items-center gap-8 text-xs font-bold text-zinc-600">
+                    <a href="#menu" class="hover:text-amber-600 transition-colors">Menu Jajanan</a>
+                    <a href="#reviews" class="hover:text-amber-600 transition-colors">Ulasan Pelanggan</a>
+                    <a href="#location" class="hover:text-amber-600 transition-colors">Alamat & Rute Takeaway</a>
+                </nav>
+
+                <!-- Header Actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Discreet Owner Portal Lock Button -->
+                    <button @click="openAdminModal()" class="p-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors border border-zinc-200" title="Portal Owner & Admin">
+                        <i data-lucide="shield-lock" class="w-4 h-4 text-zinc-700"></i>
+                    </button>
+
+                    <!-- Cart Button -->
+                    <button @click="isCartOpen = true" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2.5">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-400"></i>
+                        <span class="hidden sm:inline">Pesanan</span>
+                        <span class="bg-amber-500 text-zinc-950 text-[10px] px-2 py-0.5 rounded-full font-extrabold" x-text="cartTotalItems">0</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-zinc-900 text-white pt-16 pb-20 overflow-hidden">
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-amber-400 text-xs font-semibold">
+                        <i data-lucide="flame" class="w-4 h-4"></i>
+                        <span>Digoreng Dadakan • Kualitas Bahan Pilihan</span>
+                    </div>
+
+                    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white">
+                        Layanan Pemesanan Online <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500">
+                            Gorengan Hangat & Kopi
+                        </span>
+                    </h1>
+
+                    <p class="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        Pesan praktis dari perangkat Anda, kami gorengkan segar secara dadakan. Tinggal ambil langsung di lokasi tanpa waktu tunggu lama.
+                    </p>
+
+                    <!-- Takeaway Notice Card -->
+                    <div class="p-4 rounded-2xl bg-zinc-800/80 border border-zinc-700/80 backdrop-blur-md flex items-center gap-4 text-left max-w-xl mx-auto lg:mx-0">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                            <i data-lucide="package-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Khusus Layanan Takeaway / Ambil Sendiri</h4>
+                            <p class="text-xs text-zinc-400 mt-0.5">Pesanan disiapkan segar untuk diambil langsung di warung (Samping Mj Cell).</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+                        <a href="#menu" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-all shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2">
+                            <span>Pilih Menu Gorengan</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </a>
+                        <a :href="`https://wa.me/${cleanPhone(storeConfig.phone)}`" target="_blank" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-all border border-zinc-700 flex items-center justify-center gap-2">
+                            <i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i>
+                            <span>Hubungi Kasir via WA</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="lg:col-span-5">
+                    <div class="bg-zinc-800/90 border border-zinc-700 rounded-3xl p-6 shadow-2xl space-y-5 backdrop-blur-sm">
+                        <div class="flex justify-between items-center border-b border-zinc-700 pb-4">
+                            <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                                <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                                Estimasi Waktu Penyiapan
+                            </span>
+                            <span class="bg-amber-500/10 text-amber-400 text-xs px-3 py-1 rounded-full font-bold border border-amber-500/20" x-text="`~ ${estimatedWaitTime} Menit`"></span>
+                        </div>
+
+                        <!-- QRIS Quick Showcase -->
+                        <div class="p-4 bg-zinc-900/80 rounded-2xl border border-zinc-700 flex items-center gap-4">
+                            <div class="w-16 h-16 bg-white rounded-xl p-1 shrink-0 flex items-center justify-center border border-zinc-600">
+                                <img :src="getQrisUrl()" alt="QRIS Merchant" class="w-full h-full object-contain">
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-zinc-100">Pembayaran Non-Tunai QRIS</h4>
+                                <p class="text-[11px] text-zinc-400 mt-0.5">Mendukung Gopay, OVO, ShopeePay, BCA, Mandiri & All Bank</p>
+                                <span class="inline-block mt-1 text-[10px] bg-zinc-800 text-amber-400 font-bold px-2 py-0.5 rounded border border-zinc-700" x-text="storeConfig.qrisMerchant"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-zinc-900/50 rounded-2xl border border-zinc-700/60 text-xs space-y-2 text-zinc-300">
+                            <div class="flex justify-between">
+                                <span class="text-zinc-400">📍 Lokasi Warung:</span>
+                                <span class="font-bold text-zinc-100">Samping Mj Cell</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-zinc-400">📌 Plus Code:</span>
+                                <span class="font-bold text-amber-400">GRQ3+2F4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Menu Catalog Section -->
+    <section id="menu" class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4 border-b border-zinc-200 pb-6">
+                <div>
+                    <span class="text-xs font-bold text-amber-600 uppercase tracking-widest">Katalog Produk</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-zinc-900 mt-1">Daftar Menu Gorengan & Minuman</h2>
+                </div>
+
+                <!-- Category Filters & Search -->
+                <div class="flex flex-col sm:flex-row gap-3 items-center">
+                    <div class="flex bg-zinc-100 p-1 rounded-xl text-xs font-bold text-zinc-600 border border-zinc-200">
+                        <button @click="selectedCategory = 'all'" :class="selectedCategory === 'all' ? 'bg-white text-zinc-900 shadow-sm' : 'hover:text-zinc-900'" class="px-3.5 py-1.5 rounded-lg transition-all">Semua</button>
+                        <button @click="selectedCategory = 'gorengan'" :class="selectedCategory === 'gorengan' ? 'bg-white text-zinc-900 shadow-sm' : 'hover:text-zinc-900'" class="px-3.5 py-1.5 rounded-lg transition-all">Gorengan</button>
+                        <button @click="selectedCategory = 'minuman'" :class="selectedCategory === 'minuman' ? 'bg-white text-zinc-900 shadow-sm' : 'hover:text-zinc-900'" class="px-3.5 py-1.5 rounded-lg transition-all">Minuman</button>
+                    </div>
+
+                    <div class="relative w-full sm:w-64">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"></i>
+                        <input type="text" x-model="searchQuery" placeholder="Cari nama menu..." class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-amber-500 font-medium transition-colors">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Empty State Banner -->
+            <template x-if="filteredMenu.length === 0">
+                <div class="bg-white rounded-3xl p-12 text-center border border-zinc-200 max-w-xl mx-auto my-12 space-y-4 shadow-sm">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+                        <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-extrabold text-zinc-900">Belum Ada Menu Ditamplikan</h3>
+                        <p class="text-xs text-zinc-500 mt-1 max-w-md mx-auto">Daftar produk masih kosong. Pemilik warung dapat menambahkan produk baru melalui Dashboard Owner.</p>
+                    </div>
+                    <button @click="openAdminModal()" class="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm">
+                        🔑 Masuk Admin untuk Isi Menu
+                    </button>
+                </div>
+            </template>
+
+            <!-- Menu Grid -->
+            <div x-show="filteredMenu.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <template x-for="item in filteredMenu" :key="item.id">
+                    <div class="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative group">
+                        
+                        <!-- Sold Out Overlay -->
+                        <div x-show="!item.available" class="absolute inset-0 bg-white/95 backdrop-blur-xs z-10 flex flex-col items-center justify-center p-4 text-center">
+                            <span class="bg-rose-100 text-rose-700 text-xs font-bold px-3.5 py-1 rounded-full border border-rose-200">STOK HABIS</span>
+                            <p class="text-[11px] text-zinc-500 font-medium mt-2">Bahan sedang dipersiapkan ulang</p>
+                        </div>
+
+                        <div>
+                            <!-- Product Image / Icon Banner -->
+                            <div class="h-44 bg-zinc-100 border-b border-zinc-100 relative overflow-hidden flex items-center justify-center">
+                                <template x-if="item.image">
+                                    <img :src="item.image" :alt="item.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                </template>
+                                <template x-if="!item.image">
+                                    <span class="text-5xl" x-text="item.icon || '🧆'"></span>
+                                </template>
+
+                                <!-- Tag Badge -->
+                                <template x-if="item.badge">
+                                    <span class="absolute top-3 left-3 bg-zinc-900/90 backdrop-blur-md text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-zinc-700" x-text="item.badge"></span>
+                                </template>
+                            </div>
+
+                            <div class="p-5">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <h3 class="text-base font-extrabold text-zinc-900" x-text="item.name"></h3>
+                                    <span class="text-xs font-extrabold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shrink-0" x-text="`Rp ${item.price.toLocaleString('id-ID')}`"></span>
+                                </div>
+                                <p class="text-xs text-zinc-500 leading-relaxed font-medium line-clamp-2" x-text="item.desc"></p>
+                            </div>
+                        </div>
+
+                        <div class="p-5 pt-0">
+                            <button @click="quickAdd(item)" :disabled="!item.available" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50">
+                                <i data-lucide="plus" class="w-4 h-4 text-amber-400"></i>
+                                <span>Tambah ke Pesanan</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </template>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Customer Reviews Section -->
+    <section id="reviews" class="py-16 bg-zinc-100 border-t border-zinc-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-xl mb-10">
+                <span class="text-xs font-bold text-amber-600 uppercase tracking-widest">Feedback Pelanggan</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-zinc-900 mt-1">Ulasan & Testimoni Pelanggan</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Submit Form -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-4">
+                    <h3 class="font-bold text-zinc-900 text-sm">✍️ Berikan Ulasan Pengalaman Anda</h3>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-700 mb-1">Nama Anda:</label>
+                            <input type="text" x-model="newReview.name" placeholder="cth: Pelanggan Setia" class="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl focus:outline-none focus:border-amber-500 font-medium">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-700 mb-1">Rating Penilaian:</label>
+                            <select x-model.number="newReview.rating" class="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-bold">
+                                <option value="5">⭐⭐⭐⭐⭐ (5/5) Sangat Puas</option>
+                                <option value="4">⭐⭐⭐⭐ (4/5) Enak & Bagus</option>
+                                <option value="3">⭐⭐⭐ (3/5) Cukup Baik</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-700 mb-1">Komentar Ulasan:</label>
+                            <textarea x-model="newReview.comment" rows="3" placeholder="Gorengannya garing hangat, pelayanan cepat!" class="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl focus:outline-none focus:border-amber-500 font-medium"></textarea>
+                        </div>
+
+                        <button @click="submitReview()" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all">
+                            Kirim Ulasan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reviews Display -->
+                <div class="lg:col-span-8 space-y-3">
+                    <template x-for="rev in reviews" :key="rev.id">
+                        <div class="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm flex items-start gap-4">
+                            <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 font-bold flex items-center justify-center shrink-0 text-sm border border-amber-200">
+                                <span x-text="rev.name.charAt(0).toUpperCase()"></span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="font-bold text-zinc-900 text-xs" x-text="rev.name"></h4>
+                                    <span class="text-xs text-amber-500" x-text="'⭐'.repeat(rev.rating)"></span>
+                                </div>
+                                <p class="text-xs text-zinc-600 font-medium mt-1 leading-relaxed" x-text="rev.comment"></p>
+                                <span class="text-[10px] text-zinc-400 font-medium mt-2 block" x-text="rev.date"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cart Drawer Sidebar -->
+    <div x-show="isCartOpen" class="fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-xs flex justify-end" x-cloak x-transition>
+        <div class="bg-white border-l border-zinc-200 w-full max-w-md h-full flex flex-col justify-between p-6 overflow-y-auto shadow-2xl">
+            
+            <div>
+                <div class="flex items-center justify-between border-b border-zinc-200 pb-4 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-600"></i>
+                        <h3 class="font-bold text-lg text-zinc-900">Ringkasan Pesanan</h3>
+                    </div>
+                    <button @click="isCartOpen = false" class="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 flex items-center justify-center">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Takeaway Alert -->
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                    <span>Pesanan khusus AMBIL SENDIRI di Warung Pak Andi (Samping Mj Cell)</span>
+                </div>
+
+                <!-- Items List -->
+                <div class="space-y-3 mb-6">
+                    <template x-if="cart.length === 0">
+                        <div class="text-center py-12 text-zinc-400 font-medium text-xs space-y-2">
+                            <i data-lucide="shopping-cart" class="w-8 h-8 mx-auto text-zinc-300"></i>
+                            <span>Keranjang belanja Anda masih kosong.</span>
+                        </div>
+                    </template>
+                    
+                    <template x-for="(item, index) in cart" :key="index">
+                        <div class="p-3 bg-zinc-50 rounded-xl border border-zinc-200 flex items-center justify-between text-xs">
+                            <div>
+                                <h4 class="font-bold text-zinc-900 text-xs" x-text="item.name"></h4>
+                                <span class="text-amber-600 font-bold mt-0.5 block" x-text="`Rp ${(item.price * item.qty).toLocaleString('id-ID')}`"></span>
+                            </div>
+                            <div class="flex items-center border border-zinc-300 rounded-lg bg-white">
+                                <button @click="updateCartQty(index, -1)" class="w-7 h-7 font-bold text-zinc-700 hover:bg-zinc-100 rounded-l-lg">-</button>
+                                <span class="w-7 text-center font-bold text-zinc-900 text-xs" x-text="item.qty"></span>
+                                <button @click="updateCartQty(index, 1)" class="w-7 h-7 font-bold text-zinc-700 hover:bg-zinc-100 rounded-r-lg">+</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Pickup Time Selector -->
+                <div class="bg-zinc-50 p-4 rounded-xl border border-zinc-200 mb-4 space-y-2">
+                    <label class="block text-xs font-bold text-zinc-700 uppercase">Jadwal Ambil Pesanan:</label>
+                    <select x-model="pickupTime" class="w-full bg-white border border-zinc-200 rounded-lg p-2.5 text-xs font-medium text-zinc-900 focus:outline-none focus:border-amber-500">
+                        <option value="Langsung Ambil (~15 Menit)">Langsung Ambil Sekarang (~15 Menit)</option>
+                        <option value="Jam Istirahat (12:00 WIB)">Jam Istirahat Siang (12:00 WIB)</option>
+                        <option value="Sore Hari (16:00 WIB)">Sore Hari (16:00 WIB)</option>
+                        <option value="Pulang Kerja (18:30 WIB)">Pulang Kerja (18:30 WIB)</option>
+                    </select>
+                </div>
+
+                <!-- Payment Options -->
+                <div class="bg-zinc-50 p-4 rounded-xl border border-zinc-200 mb-4 space-y-2">
+                    <label class="block text-xs font-bold text-zinc-700 uppercase">Metode Pembayaran:</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-3 rounded-lg border cursor-pointer bg-white" :class="payMethod === 'Cash' ? 'border-amber-500 bg-amber-50/50' : 'border-zinc-200'">
+                            <input type="radio" x-model="payMethod" value="Cash" class="accent-amber-500">
+                            <div>
+                                <span class="text-xs font-bold text-zinc-900 block">Tunai (Cash)</span>
+                                <span class="text-[10px] text-zinc-500 font-medium">Bayar saat ambil</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 rounded-lg border cursor-pointer bg-white" :class="payMethod === 'QRIS' ? 'border-amber-500 bg-amber-50/50' : 'border-zinc-200'">
+                            <input type="radio" x-model="payMethod" value="QRIS" class="accent-amber-500">
+                            <div>
+                                <span class="text-xs font-bold text-zinc-900 block">Scan QRIS</span>
+                                <span class="text-[10px] text-zinc-500 font-medium">Transfer Non-Tunai</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cart Footer -->
+            <div class="border-t border-zinc-200 pt-4">
+                <div class="flex justify-between text-base font-extrabold text-zinc-900 mb-4">
+                    <span>Total Tagihan:</span>
+                    <span class="text-amber-600" x-text="`Rp ${grandTotal.toLocaleString('id-ID')}`"></span>
+                </div>
+
+                <button @click="proceedCheckout()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span x-text="payMethod === 'QRIS' ? 'Lanjut Pembayaran QRIS' : 'Kirim Pesanan ke WA Kasir'"></span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- QRIS Payment Modal -->
+    <div x-show="isQrisModalOpen" class="fixed inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center p-4" x-cloak x-transition>
+        <div class="bg-white border border-zinc-200 w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+            <button @click="isQrisModalOpen = false" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-zinc-100 text-zinc-700 flex items-center justify-center">
+                ✕
+            </button>
+
+            <div class="text-center mb-4">
+                <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase">QRIS Pembayaran Resmi</span>
+                <h3 class="text-xl font-extrabold text-zinc-900 mt-2">Scan & Transfer QRIS</h3>
+                <p class="text-xs text-zinc-500 font-medium mt-1">Total Tagihan: <span class="text-amber-600 font-bold text-sm" x-text="`Rp ${grandTotal.toLocaleString('id-ID')}`"></span></p>
+            </div>
+
+            <!-- QR Code Showcase Box -->
+            <div class="bg-white p-4 rounded-xl w-56 h-56 mx-auto flex items-center justify-center border border-zinc-300 shadow-inner">
+                <img :src="getQrisUrl()" alt="QRIS Merchant" class="w-full h-full object-contain">
+            </div>
+
+            <div class="text-center mt-3">
+                <span class="text-xs font-bold text-zinc-900 block" x-text="storeConfig.qrisMerchant"></span>
+                <span class="text-[10px] text-zinc-500 font-medium" x-text="`NMID: ${storeConfig.qrisNmid}`"></span>
+            </div>
+
+            <button @click="finalizeQrisWA()" class="w-full mt-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+                <span>Konfirmasi & Kirim Pesanan via WhatsApp</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- OWNER / ADMIN PANEL MODAL -->
+    <div x-show="isAdminModalOpen" class="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-md flex items-center justify-center p-4" x-cloak x-transition>
+        <div class="bg-white border border-zinc-200 w-full max-w-4xl h-[90vh] rounded-3xl p-6 relative flex flex-col shadow-2xl">
+            
+            <div class="flex justify-between items-center border-b border-zinc-200 pb-4 mb-4 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-zinc-900 text-amber-400 flex items-center justify-center font-bold text-xl border border-zinc-800">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-lg text-zinc-900">Dashboard Owner Warung</h3>
+                        <p class="text-xs text-zinc-500">Kelola Produk, Toko, QRIS, & Rekap Omset</p>
+                    </div>
+                </div>
+                <button @click="isAdminModalOpen = false" class="w-8 h-8 rounded-full bg-zinc-100 text-zinc-700 flex items-center justify-center font-bold">
+                    ✕
+                </button>
+            </div>
+
+            <!-- PIN Auth Screen -->
+            <template x-if="!isAdminAuthenticated">
+                <div class="my-auto text-center max-w-sm mx-auto space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-zinc-100 flex items-center justify-center mx-auto border border-zinc-200 text-zinc-700">
+                        <i data-lucide="lock" class="w-6 h-6"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-zinc-900">Akses Keamanan Owner</h4>
+                    <p class="text-xs text-zinc-500">Masukkan PIN khusus pemilik warung untuk membuka dashboard.</p>
+                    
+                    <input type="password" x-model="adminPinInput" @keyup.enter="authenticateAdmin()" placeholder="••••••" class="w-full bg-zinc-50 border border-zinc-300 text-center text-xl font-bold tracking-widest text-zinc-900 py-3 rounded-xl focus:outline-none focus:border-amber-500">
+                    
+                    <button @click="authenticateAdmin()" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm">
+                        Buka Dashboard Admin
+                    </button>
+                </div>
+            </template>
+
+            <!-- Authenticated Admin Dashboard -->
+            <template x-if="isAdminAuthenticated">
+                <div class="flex-1 overflow-y-auto space-y-6 pr-2">
+
+                    <!-- Admin Tabs -->
+                    <div class="flex border-b border-zinc-200 gap-6 text-xs font-bold text-zinc-600 overflow-x-auto">
+                        <button @click="adminTab = 'menu'" :class="adminTab === 'menu' ? 'text-zinc-900 border-b-2 border-amber-500 pb-2.5' : 'pb-2.5'">📋 Kelola Produk & Stok</button>
+                        <button @click="adminTab = 'store'" :class="adminTab === 'store' ? 'text-zinc-900 border-b-2 border-amber-500 pb-2.5' : 'pb-2.5'">⚙️ Informasi Toko & QRIS</button>
+                        <button @click="adminTab = 'orders'" :class="adminTab === 'orders' ? 'text-zinc-900 border-b-2 border-amber-500 pb-2.5' : 'pb-2.5'">📊 Pesanan & Omset</button>
+                    </div>
+
+                    <!-- TAB 1: Menu Management -->
+                    <div x-show="adminTab === 'menu'" class="space-y-6">
+                        <!-- Add Form -->
+                        <div class="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 space-y-4">
+                            <h4 class="font-bold text-zinc-900 text-xs uppercase tracking-wider">➕ Tambah / Edit Produk Baru</h4>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                                <input type="text" x-model="newItem.name" placeholder="Nama Produk (cth: Pisang Goreng)" class="bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-medium">
+                                <input type="number" x-model.number="newItem.price" placeholder="Harga (Rp)" class="bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-medium">
+                                <select x-model="newItem.category" class="bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-bold">
+                                    <option value="gorengan">Gorengan</option>
+                                    <option value="minuman">Minuman</option>
+                                </select>
+                                <input type="text" x-model="newItem.icon" placeholder="Emoji Icon (🍌/☕)" class="bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-medium">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <input type="text" x-model="newItem.image" placeholder="URL Gambar Produk (opsional)" class="bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-medium">
+                                <input type="text" x-model="newItem.badge" placeholder="Badge Spesial (cth: Rekomendasi / Pedas)" class="bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-medium">
+                            </div>
+
+                            <div>
+                                <input type="text" x-model="newItem.desc" placeholder="Deskripsi Singkat Produk" class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-3 rounded-xl font-medium">
+                            </div>
+
+                            <button @click="saveProductItem()" class="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm">
+                                Simpan Produk
+                            </button>
+                        </div>
+
+                        <!-- Product List Table -->
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-zinc-900 text-xs uppercase tracking-wider">📦 Daftar Produk Katalog</h4>
+                            <template x-if="menu.length === 0">
+                                <p class="text-xs text-zinc-400 py-4 text-center font-medium">Belum ada produk tersimpan.</p>
+                            </template>
+                            <template x-for="(item, idx) in menu" :key="item.id">
+                                <div class="p-4 bg-zinc-50 rounded-xl border border-zinc-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs">
+                                    <div class="flex items-center gap-3 flex-1">
+                                        <span class="text-2xl" x-text="item.icon || '🧆'"></span>
+                                        <div>
+                                            <h5 class="font-bold text-zinc-900 text-xs" x-text="item.name"></h5>
+                                            <span class="text-amber-600 font-bold" x-text="`Rp ${item.price.toLocaleString('id-ID')}`"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="toggleStock(idx)" :class="item.available ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'" class="px-3 py-1 rounded-lg border font-bold text-[11px]">
+                                            <span x-text="item.available ? 'Tersedia' : 'HABIS'"></span>
+                                        </button>
+                                        <button @click="deleteProduct(idx)" class="p-2 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700" title="Hapus">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Store Config & QRIS -->
+                    <div x-show="adminTab === 'store'" class="space-y-4">
+                        <div class="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 space-y-4">
+                            <h4 class="font-bold text-zinc-900 text-xs uppercase tracking-wider">⚙️ Pengaturan Toko & Informasi</h4>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-700 mb-1">Status Buka/Tutup Toko:</label>
+                                    <button @click="toggleStoreStatus()" :class="isOpen ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'" class="w-full py-2.5 rounded-xl font-bold text-xs">
+                                        <span x-text="isOpen ? 'WARUNG BUKA (KLIK UNTUK TUTUP)' : 'WARUNG TUTUP (KLIK UNTUK BUKA)'"></span>
+                                    </button>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-700 mb-1">Jam Operasional:</label>
+                                    <input type="text" x-model="storeConfig.hours" @change="saveStoreConfig()" class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-700 mb-1">Nomor WhatsApp Kasir/Warung:</label>
+                                <input type="text" x-model="storeConfig.phone" @change="saveStoreConfig()" class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-700 mb-1">Teks Pengumuman Banner Atas:</label>
+                                <input type="text" x-model="storeConfig.announcementText" @change="saveStoreConfig()" class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                            </div>
+                        </div>
+
+                        <!-- QRIS Settings -->
+                        <div class="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 space-y-4">
+                            <h4 class="font-bold text-zinc-900 text-xs uppercase tracking-wider">📱 Configuration QRIS</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-700 mb-1">Nama Merchant QRIS:</label>
+                                    <input type="text" x-model="storeConfig.qrisMerchant" @change="saveStoreConfig()" class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-700 mb-1">NMID QRIS:</label>
+                                    <input type="text" x-model="storeConfig.qrisNmid" @change="saveStoreConfig()" class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-700 mb-1">URL Gambar QRIS (Kosongkan untuk otomatis generator QR Code):</label>
+                                <input type="text" x-model="storeConfig.qrisImageUrl" @change="saveStoreConfig()" placeholder="https://..." class="w-full bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Owner Security & Backup -->
+                        <div class="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 space-y-3">
+                            <h4 class="font-bold text-zinc-900 text-xs uppercase tracking-wider">🔐 Ubah PIN Security Owner & Backup Data</h4>
+                            
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <input type="password" x-model="newPinInput" placeholder="Masukkan PIN Baru (Min 4 Digit)" class="flex-1 bg-white border border-zinc-200 text-zinc-900 text-xs p-2.5 rounded-xl font-medium">
+                                <button @click="updateOwnerPin()" class="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl">Update PIN</button>
+                            </div>
+
+                            <div class="pt-3 border-t border-zinc-200 flex flex-col sm:flex-row gap-3">
+                                <button @click="exportStoreData()" class="flex-1 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">📥 Export Backup Data (JSON)</button>
+                                <button @click="triggerImportJSON()" class="flex-1 py-2.5 bg-sky-600 text-white font-bold text-xs rounded-xl">📤 Import Backup Data</button>
+                                <input type="file" id="importJsonInput" @change="importStoreData" accept=".json" class="hidden">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Orders Logs -->
+                    <div x-show="adminTab === 'orders'" class="space-y-4">
+                        <div class="bg-zinc-50 p-4 rounded-xl border border-zinc-200 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs text-zinc-500 font-medium">Total Rekap Omset Masuk:</span>
+                                <h3 class="text-xl font-extrabold text-amber-600" x-text="`Rp ${totalRevenue.toLocaleString('id-ID')}`"></h3>
+                            </div>
+                            <button @click="clearLogs()" class="px-4 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg">Clear Log</button>
+                        </div>
+
+                        <div class="space-y-2">
+                            <template x-if="orderLogs.length === 0">
+                                <p class="text-xs text-zinc-400 py-4 text-center">Belum ada riwayat pesanan.</p>
+                            </template>
+                            <template x-for="log in orderLogs" :key="log.id">
+                                <div class="p-4 bg-zinc-50 rounded-xl border border-zinc-200 flex justify-between items-center text-xs">
+                                    <div>
+                                        <span class="font-bold text-zinc-900" x-text="`Order #${log.id}`"></span>
+                                        <span class="ml-2 bg-zinc-200 text-zinc-800 px-2 py-0.5 rounded font-bold" x-text="log.method"></span>
+                                        <p class="text-zinc-500 font-medium mt-1" x-text="`Ambil: ${log.pickup}`"></p>
+                                    </div>
+                                    <span class="font-bold text-amber-600 text-sm" x-text="`Rp ${log.total.toLocaleString('id-ID')}`"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                </div>
+            </template>
+
+        </div>
+    </div>
+
+    <!-- Location Section -->
+    <section id="location" class="py-16 bg-white border-t border-zinc-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <div class="lg:col-span-6 space-y-4">
+                    <span class="text-xs font-bold uppercase text-amber-600 tracking-widest">Lokasi Pengambilan Takeaway</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-zinc-900">Alamat Lengkap Warung</h2>
+                    
+                    <div class="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 space-y-3 text-xs">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-zinc-900 text-xs">Alamat Warung Pak Andi:</h4>
+                                <p class="text-zinc-600 font-medium mt-1 leading-relaxed">
+                                    GRQ3+2F4 GORENGAN PAK ANDI, Samping Mj Cell Warung Gorengan Pak Andi, Jalan Langgar Smk Albasariah, RT.03/RW.02, Kabupaten Bogor
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 pt-3 border-t border-zinc-200">
+                            <i data-lucide="phone" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                            <div>
+                                <h4 class="font-bold text-zinc-900 text-xs">Kontak WhatsApp Kasir:</h4>
+                                <a :href="`https://wa.me/${cleanPhone(storeConfig.phone)}`" target="_blank" class="text-emerald-600 font-bold text-sm mt-0.5 block hover:underline" x-text="storeConfig.phone"></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="https://maps.google.com/?q=GRQ3%2B2F4" target="_blank" class="inline-flex py-3.5 px-6 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm items-center gap-2">
+                        <i data-lucide="navigation" class="w-4 h-4 text-amber-400"></i>
+                        <span>Buka Rute Google Maps (Plus Code: GRQ3+2F4)</span>
+                    </a>
+                </div>
+
+                <div class="lg:col-span-6">
+                    <div class="bg-zinc-900 text-white rounded-3xl p-8 border border-zinc-800 text-center space-y-3 shadow-xl">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+                            <i data-lucide="store" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-white">Warung Gorengan Pak Andi</h3>
+                        <p class="text-xs text-zinc-400 font-medium">Samping Mj Cell • Jl. Langgar SMK Albasariah</p>
+                        <span class="inline-block px-3.5 py-1 bg-zinc-800 text-amber-400 font-bold text-[11px] rounded-full border border-zinc-700">
+                            Khusus Pesanan Ambil di Tempat (Takeaway)
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-zinc-950 text-zinc-400 py-8 border-t border-zinc-800">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-3 text-xs">
+            <p class="font-medium">© 2026 Warung Gorengan Pak Andi. Digoreng Dadakan & Segar!</p>
+            
+            <button @click="openAdminModal()" class="text-zinc-600 hover:text-zinc-300 transition-colors inline-flex items-center gap-1 text-[11px]">
+                <i data-lucide="lock" class="w-3 h-3"></i>
+                <span>Owner Portal</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        function businessApp() {
+            return {
+                isOpen: true,
+                searchQuery: '',
+                selectedCategory: 'all',
+                adminTab: 'menu',
+                isCartOpen: false,
+                isQrisModalOpen: false,
+                isAdminModalOpen: false,
+                isAdminAuthenticated: false,
+                adminPinInput: '',
+                newPinInput: '',
+                pickupTime: 'Langsung Ambil (~15 Menit)',
+                payMethod: 'Cash',
+                toasts: [],
+                cart: [],
+                orderLogs: [],
+
+                // Store Config
+                storeConfig: {
+                    name: 'GORENGAN PAK ANDI',
+                    tagline: 'Gorengan Garing & Kopi',
+                    phone: '+62 821-1933-2889',
+                    hours: '13:00 - 22:00 WIB',
+                    announcementText: 'INFORMASI PELANGGAN: KHUSUS LAYANAN TAKEAWAY / AMBIL DI TEMPAT (TIDAK MELAYANI PENGIRIMAN / NO DELIVERY)',
+                    qrisMerchant: 'GORENGAN PAK ANDI OFFICIAL',
+                    qrisNmid: 'ID1029384756201',
+                    qrisImageUrl: '',
+                    ownerPin: '020409'
+                },
+
+                // Empty Initial Menu Catalog
+                menu: [],
+
+                // Admin Form State
+                newItem: { name: '', price: 1000, category: 'gorengan', icon: '🧆', image: '', desc: '', badge: '' },
+
+                // Reviews
+                newReview: { name: '', rating: 5, comment: '' },
+                reviews: [
+                    { id: 1, name: 'Budi S.', rating: 5, comment: 'Gorengan selalu hangat garing, pelayanannya cepat mantap.', date: 'Kemarin' },
+                    { id: 2, name: 'Siti R.', rating: 5, comment: 'Pesan dari WA langsung siap pas diambil di warung. Praktis!', date: '3 Hari Lalu' }
+                ],
+
+                initApp() {
+                    const savedMenu = localStorage.getItem('pak_andi_biz_menu');
+                    if (savedMenu) this.menu = JSON.parse(savedMenu);
+
+                    const savedConfig = localStorage.getItem('pak_andi_biz_config');
+                    if (savedConfig) this.storeConfig = { ...this.storeConfig, ...JSON.parse(savedConfig) };
+
+                    const savedLogs = localStorage.getItem('pak_andi_biz_logs');
+                    if (savedLogs) this.orderLogs = JSON.parse(savedLogs);
+
+                    lucide.createIcons();
+                },
+
+                cleanPhone(phoneStr) {
+                    return phoneStr.replace(/[^0-9]/g, '');
+                },
+
+                getQrisUrl() {
+                    if (this.storeConfig.qrisImageUrl && this.storeConfig.qrisImageUrl.trim() !== '') {
+                        return this.storeConfig.qrisImageUrl;
+                    }
+                    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(this.storeConfig.qrisMerchant)}`;
+                },
+
+                saveMenuToStorage() {
+                    localStorage.setItem('pak_andi_biz_menu', JSON.stringify(this.menu));
+                },
+
+                saveStoreConfig() {
+                    localStorage.setItem('pak_andi_biz_config', JSON.stringify(this.storeConfig));
+                },
+
+                saveLogsToStorage() {
+                    localStorage.setItem('pak_andi_biz_logs', JSON.stringify(this.orderLogs));
+                },
+
+                get filteredMenu() {
+                    return this.menu.filter(item => {
+                        const matchesCategory = this.selectedCategory === 'all' || item.category === this.selectedCategory;
+                        const matchesSearch = item.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                                              item.desc.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return matchesCategory && matchesSearch;
+                    });
+                },
+
+                get estimatedWaitTime() {
+                    return 10 + (this.cartTotalItems * 2);
+                },
+
+                quickAdd(item) {
+                    if (!item.available) return;
+                    const idx = this.cart.findIndex(i => i.name === item.name);
+                    if (idx > -1) {
+                        this.cart[idx].qty += 1;
+                    } else {
+                        this.cart.push({
+                            name: item.name,
+                            price: item.price,
+                            qty: 1
+                        });
+                    }
+                    this.showToast(`"${item.name}" ditambahkan ke keranjang pesanan.`);
+                },
+
+                updateCartQty(index, delta) {
+                    this.cart[index].qty += delta;
+                    if (this.cart[index].qty <= 0) {
+                        this.cart.splice(index, 1);
+                    }
+                },
+
+                get cartTotalItems() {
+                    return this.cart.reduce((a, b) => a + b.qty, 0);
+                },
+
+                get grandTotal() {
+                    return this.cart.reduce((a, b) => a + (b.price * b.qty), 0);
+                },
+
+                get totalRevenue() {
+                    return this.orderLogs.reduce((acc, curr) => acc + (curr.total || 0), 0);
+                },
+
+                submitReview() {
+                    if (!this.newReview.name || !this.newReview.comment) {
+                        alert('Silakan isi nama dan komentar ulasan Anda.');
+                        return;
+                    }
+                    this.reviews.unshift({
+                        id: Date.now(),
+                        name: this.newReview.name,
+                        rating: Number(this.newReview.rating),
+                        comment: this.newReview.comment,
+                        date: 'Baru Saja'
+                    });
+                    this.newReview = { name: '', rating: 5, comment: '' };
+                    this.showToast('Ulasan berhasil dikirim.');
+                },
+
+                proceedCheckout() {
+                    if (this.cart.length === 0) {
+                        alert('Keranjang pesanan masih kosong!');
+                        return;
+                    }
+
+                    if (this.payMethod === 'QRIS') {
+                        this.isCartOpen = false;
+                        this.isQrisModalOpen = true;
+                    } else {
+                        this.sendWhatsAppOrder('CASH (Bayar saat Ambil)');
+                    }
+                },
+
+                finalizeQrisWA() {
+                    this.sendWhatsAppOrder('QRIS (Non-Tunai)');
+                    this.isQrisModalOpen = false;
+                },
+
+                sendWhatsAppOrder(paymentLabel) {
+                    const orderId = Math.floor(1000 + Math.random() * 9000);
+                    const itemsText = this.cart.map(i => `- *${i.name}* (${i.qty}x) = Rp ${(i.price * i.qty).toLocaleString('id-ID')}`).join('\n');
+
+                    this.orderLogs.unshift({
+                        id: orderId,
+                        total: this.grandTotal,
+                        method: paymentLabel,
+                        pickup: this.pickupTime
+                    });
+                    this.saveLogsToStorage();
+
+                    const text = `Halo *Pak Andi (Gorengan Pak Andi)*,\nSaya ingin membuat pesanan *TAKEAWAY (Ambil di Tempat)*:\n\n` +
+                        `*ID PESANAN:* #${orderId}\n` +
+                        `------------------------------------\n` +
+                        `*Rincian Item Pesanan:*\n${itemsText}\n\n` +
+                        `------------------------------------\n` +
+                        `*Layanan:* 🏬 AMBIL SENDIRI DI WARUNG\n` +
+                        `*Jadwal Ambil:* ${this.pickupTime}\n` +
+                        `*Metode Bayar:* ${paymentLabel}\n` +
+                        `*Total Tagihan:* *Rp ${this.grandTotal.toLocaleString('id-ID')}*\n\n` +
+                        `Mohon konfirmasi dan dipersiapkan hangat saat pengambilan. Terima kasih!`;
+
+                    window.open(`https://wa.me/${this.cleanPhone(this.storeConfig.phone)}?text=${encodeURIComponent(text)}`, '_blank');
+                    this.cart = [];
+                    this.isCartOpen = false;
+                },
+
+                // Owner Panel
+                openAdminModal() {
+                    this.isAdminModalOpen = true;
+                },
+
+                authenticateAdmin() {
+                    if (this.adminPinInput === this.storeConfig.ownerPin) {
+                        this.isAdminAuthenticated = true;
+                        this.showToast('Berhasil autentikasi Owner!');
+                    } else {
+                        alert('PIN Keamanan Salah!');
+                    }
+                },
+
+                updateOwnerPin() {
+                    if (!this.newPinInput || this.newPinInput.length < 4) {
+                        alert('PIN minimal 4 digit!');
+                        return;
+                    }
+                    this.storeConfig.ownerPin = this.newPinInput;
+                    this.newPinInput = '';
+                    this.saveStoreConfig();
+                    this.showToast('PIN Owner berhasil diperbarui!');
+                },
+
+                toggleStoreStatus() {
+                    this.isOpen = !this.isOpen;
+                    this.saveStoreConfig();
+                    this.showToast(`Status Toko: ${this.isOpen ? 'BUKA' : 'TUTUP'}`);
+                },
+
+                saveProductItem() {
+                    if (!this.newItem.name || !this.newItem.price) {
+                        alert('Isi nama dan harga produk!');
+                        return;
+                    }
+                    this.menu.push({
+                        id: 'prod-' + Date.now(),
+                        name: this.newItem.name,
+                        price: Number(this.newItem.price),
+                        category: this.newItem.category,
+                        icon: this.newItem.icon || '🧆',
+                        image: this.newItem.image || '',
+                        desc: this.newItem.desc || 'Gorengan garing hangat khas Pak Andi',
+                        badge: this.newItem.badge || '',
+                        available: true
+                    });
+                    this.saveMenuToStorage();
+                    this.newItem = { name: '', price: 1000, category: 'gorengan', icon: '🧆', image: '', desc: '', badge: '' };
+                    this.showToast('Produk baru tersimpan!');
+                },
+
+                toggleStock(index) {
+                    this.menu[index].available = !this.menu[index].available;
+                    this.saveMenuToStorage();
+                    this.showToast(`Stok "${this.menu[index].name}" diperbarui.`);
+                },
+
+                deleteProduct(index) {
+                    if (confirm(`Hapus produk "${this.menu[index].name}"?`)) {
+                        this.menu.splice(index, 1);
+                        this.saveMenuToStorage();
+                        this.showToast('Produk dihapus.');
+                    }
+                },
+
+                exportStoreData() {
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                        menu: this.menu,
+                        config: this.storeConfig,
+                        logs: this.orderLogs
+                    }));
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", `Gorengan_Pak_Andi_Backup_${Date.now()}.json`);
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+                    downloadAnchor.remove();
+                },
+
+                triggerImportJSON() {
+                    document.getElementById('importJsonInput').click();
+                },
+
+                importStoreData(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const parsed = JSON.parse(event.target.result);
+                            if (parsed.menu) this.menu = parsed.menu;
+                            if (parsed.config) this.storeConfig = parsed.config;
+                            if (parsed.logs) this.orderLogs = parsed.logs;
+                            this.saveMenuToStorage();
+                            this.saveStoreConfig();
+                            this.saveLogsToStorage();
+                            alert('Data catalog toko berhasil di-import!');
+                        } catch (err) {
+                            alert('Format file JSON tidak valid!');
+                        }
+                    };
+                    reader.readAsText(file);
+                },
+
+                clearLogs() {
+                    if (confirm('Bersihkan rekap riwayat pesanan?')) {
+                        this.orderLogs = [];
+                        this.saveLogsToStorage();
+                    }
+                },
+
+                showToast(message) {
+                    const id = Date.now();
+                    this.toasts.push({ id, message });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
